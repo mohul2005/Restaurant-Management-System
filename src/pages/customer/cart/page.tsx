@@ -51,7 +51,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-background-50 flex flex-col">
-      <header className="sticky top-0 z-30 bg-background-50 border-b border-background-200">
+      <header className="sticky top-0 z-30 bg-background-50/95 backdrop-blur-sm border-b border-background-200">
         <div className="px-4 py-3 flex items-center gap-3">
           <Link to={`/menu/${tableCode}`} className="text-foreground-500 hover:text-foreground-700">
             <i className="ri-arrow-left-line text-lg"></i>
@@ -159,7 +159,7 @@ export default function CartPage() {
             </div>
 
             {error && (
-              <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              <div className="mt-4 p-3 rounded-lg bg-primary-50 border border-primary-200 text-primary-700 text-sm">
                 {error}
               </div>
             )}

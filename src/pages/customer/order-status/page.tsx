@@ -6,38 +6,38 @@ import type { Order } from "@/store/OrderContext";
 const STATUS_CONFIG: Record<Order["status"], { label: string; color: string; bg: string; icon: string }> = {
   pending_approval: {
     label: "Waiting for Approval",
-    color: "text-yellow-600",
-    bg: "bg-yellow-50 border-yellow-200",
+    color: "text-accent-700",
+    bg: "bg-accent-50 border-accent-200",
     icon: "ri-time-line",
   },
   approved: {
     label: "Approved",
-    color: "text-blue-600",
-    bg: "bg-blue-50 border-blue-200",
+    color: "text-secondary-700",
+    bg: "bg-secondary-50 border-secondary-200",
     icon: "ri-check-double-line",
   },
   awaiting_payment: {
     label: "Awaiting Payment",
-    color: "text-blue-600",
-    bg: "bg-blue-50 border-blue-200",
+    color: "text-secondary-700",
+    bg: "bg-secondary-50 border-secondary-200",
     icon: "ri-bank-card-line",
   },
   paid: {
     label: "Paid",
-    color: "text-green-600",
-    bg: "bg-green-50 border-green-200",
+    color: "text-primary-700",
+    bg: "bg-primary-50 border-primary-200",
     icon: "ri-check-line",
   },
   preparing: {
     label: "Preparing",
-    color: "text-orange-600",
-    bg: "bg-orange-50 border-orange-200",
+    color: "text-primary-700",
+    bg: "bg-primary-50 border-primary-200",
     icon: "ri-fire-line",
   },
   ready: {
     label: "Ready to Serve",
-    color: "text-green-600",
-    bg: "bg-green-50 border-green-200",
+    color: "text-primary-700",
+    bg: "bg-primary-50 border-primary-200",
     icon: "ri-restaurant-line",
   },
 };
@@ -88,7 +88,7 @@ export default function OrderStatusPage() {
 
   if (!tableCode || !orderId) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background-50">
         <div className="text-center">
           <p className="text-foreground-600">Invalid order link.</p>
           <Link to="/" className="text-primary-500 text-sm mt-2 inline-block hover:underline">
@@ -131,7 +131,7 @@ export default function OrderStatusPage() {
 
   return (
     <div className="min-h-screen bg-background-50 pb-8">
-      <header className="sticky top-0 z-30 bg-background-50 border-b border-background-200">
+      <header className="sticky top-0 z-30 bg-background-50/95 backdrop-blur-sm border-b border-background-200">
         <div className="px-4 py-3 flex items-center gap-3">
           <Link to={`/menu/${tableCode}`} className="text-foreground-500 hover:text-foreground-700">
             <i className="ri-arrow-left-line text-lg"></i>
@@ -177,7 +177,7 @@ export default function OrderStatusPage() {
                     <div
                       className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors ${
                         isCompleted
-                          ? "bg-green-500 border-green-500"
+                          ? "bg-primary-500 border-primary-500"
                           : isCurrent
                           ? "border-primary-500 bg-primary-50"
                           : "border-background-300 bg-background-50"
@@ -194,7 +194,7 @@ export default function OrderStatusPage() {
                     {idx < STATUS_STEPS.length - 1 && (
                       <div
                         className={`w-0.5 h-6 ${
-                          isCompleted ? "bg-green-500" : "bg-background-200"
+                          isCompleted ? "bg-primary-500" : "bg-background-200"
                         }`}
                       />
                     )}
@@ -257,12 +257,12 @@ export default function OrderStatusPage() {
 
         {/* UPI Payment Section */}
         {(order.status === "awaiting_payment") && order.upi_handle && (
-          <div className="rounded-xl border-2 border-green-300 bg-green-50 p-5 mb-6">
+          <div className="rounded-xl border-2 border-accent-300 bg-accent-50 p-5 mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <i className="ri-bank-card-line text-green-600 text-lg"></i>
-              <h3 className="text-sm font-semibold text-green-800">Pay via UPI</h3>
+              <i className="ri-bank-card-line text-accent-600 text-lg"></i>
+              <h3 className="text-sm font-semibold text-accent-800">Pay via UPI</h3>
             </div>
-            <div className="bg-background-50 rounded-lg p-4 text-center border border-green-200">
+            <div className="bg-background-50 rounded-lg p-4 text-center border border-accent-200">
               <p className="text-xs text-foreground-500 mb-2">UPI Handle</p>
               <p className="text-lg font-bold text-foreground-900 tracking-wide font-mono">
                 {order.upi_handle}

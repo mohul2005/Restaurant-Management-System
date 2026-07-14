@@ -65,9 +65,8 @@ A restaurant management web app with three user roles (Customer, Manager, Kitche
 - Real-time order tracking via Supabase Realtime
 - Order status progress with color-coded steps
 
-### Phase 3: Manager Dashboard 🔜 NEXT
-- Manager login, dashboard, order detail with approve/reject
-- UPI handle configuration
+### Phase 3: Manager Dashboard ✅ DONE
+- Manager login, dashboard with live order list, approve/reject, UPI handle
 
-### Phase 4: Kitchen Dashboard
-- Kitchen login, order queue, status update controls
+### Phase 4: Kitchen Dashboard ✅ DONE
+- Kitchen login, order queue, Preparing/Ready status controls
