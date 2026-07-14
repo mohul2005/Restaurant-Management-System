@@ -18,6 +18,8 @@ interface Reservation {
   guests: string;
   notes: string;
   order_id: string | null;
+  status: string;
+  feedback: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -116,30 +118,39 @@ export default function ManagerDashboardPage() {
     if (error) console.error("Failed to update order:", error);
   }, []);
 
+  // Approve order (pending -> approved)
   const handleApprove = useCallback((orderId: string) => {
-    handleUpdateStatus(orderId, "awaiting_payment");
+    handleUpdateStatus(orderId, "approved");
   }, [handleUpdateStatus]);
 
+  // Reject order
   const handleReject = useCallback((orderId: string) => {
     if (window.confirm("Reject this order? This cannot be undone.")) {
       handleUpdateStatus(orderId, "pending_approval");
     }
   }, [handleUpdateStatus]);
 
-  const handleSaveUpi = useCallback(async (orderId: string) => {
+  // Send UPI handle and move to awaiting_payment (approved -> awaiting_payment)
+  const handleSendUpi = useCallback(async (orderId: string) => {
     const handle = upiInputs[orderId]?.trim();
     if (!handle) return;
     setUpiSaving((prev) => ({ ...prev, [orderId]: true }));
     const { error } = await supabase
       .from("orders")
-      .update({ upi_handle: handle, updated_at: new Date().toISOString() })
+      .update({ upi_handle: handle, status: "awaiting_payment", updated_at: new Date().toISOString() })
       .eq("id", orderId);
     setUpiSaving((prev) => ({ ...prev, [orderId]: false }));
     if (error) console.error("Failed to save UPI handle:", error);
   }, [upiInputs]);
 
+  // Confirm payment received (awaiting_payment -> paid)
   const handleConfirmPayment = useCallback((orderId: string) => {
     handleUpdateStatus(orderId, "paid");
+  }, [handleUpdateStatus]);
+
+  // Send to kitchen (paid -> preparing)
+  const handleSendToKitchen = useCallback((orderId: string) => {
+    handleUpdateStatus(orderId, "preparing");
   }, [handleUpdateStatus]);
 
   const handleLogout = async () => {
@@ -161,7 +172,8 @@ export default function ManagerDashboardPage() {
   if (!user) return null;
 
   const pendingOrders = orders.filter((o) => o.status === "pending_approval");
-  const approvedOrders = orders.filter((o) => o.status === "approved" || o.status === "awaiting_payment");
+  const approvedOrders = orders.filter((o) => o.status === "approved");
+  const awaitingPaymentOrders = orders.filter((o) => o.status === "awaiting_payment");
   const paidOrders = orders.filter((o) => o.status === "paid");
   const activeOrders = orders.filter((o) => o.status === "preparing");
   const completedOrders = orders.filter((o) => o.status === "ready");
@@ -196,9 +208,6 @@ export default function ManagerDashboardPage() {
     );
     return bMax - aMax;
   });
-
-  // Tables with reservations
-  const tablesWithReservations = tableGroups.filter((g) => g.reservation);
 
   return (
     <div className="min-h-screen bg-background-50">
@@ -285,8 +294,8 @@ export default function ManagerDashboardPage() {
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
               {[
                 { label: "Pending", count: pendingOrders.length, icon: "ri-time-line", bg: "bg-accent-50 border-accent-200", text: "text-accent-700" },
-                { label: "Awaiting Payment", count: approvedOrders.length, icon: "ri-bank-card-line", bg: "bg-secondary-50 border-secondary-200", text: "text-secondary-700" },
-                { label: "Paid", count: paidOrders.length, icon: "ri-check-double-line", bg: "bg-primary-50 border-primary-200", text: "text-primary-700" },
+                { label: "Approved", count: approvedOrders.length, icon: "ri-check-double-line", bg: "bg-secondary-50 border-secondary-200", text: "text-secondary-700" },
+                { label: "Awaiting Pay", count: awaitingPaymentOrders.length, icon: "ri-bank-card-line", bg: "bg-secondary-50 border-secondary-200", text: "text-secondary-700" },
                 { label: "In Kitchen", count: activeOrders.length, icon: "ri-fire-line", bg: "bg-primary-50 border-primary-200", text: "text-primary-700" },
                 { label: "Completed", count: completedOrders.length, icon: "ri-checkbox-circle-line", bg: "bg-primary-50 border-primary-200", text: "text-primary-700" },
               ].map((stat) => (
@@ -316,9 +325,6 @@ export default function ManagerDashboardPage() {
                 {nonArchiveOrders.map((order) => {
                   const statusCfg = STATUS_MAP[order.status] || STATUS_MAP.pending_approval;
                   const isExpanded = expandedOrder === order.id;
-                  const isPending = order.status === "pending_approval";
-                  const isAwaitingPayment = order.status === "awaiting_payment";
-                  const isApproved = order.status === "approved";
 
                   return (
                     <div
@@ -362,8 +368,9 @@ export default function ManagerDashboardPage() {
                           setUpiInputs={setUpiInputs}
                           handleApprove={handleApprove}
                           handleReject={handleReject}
-                          handleSaveUpi={handleSaveUpi}
+                          handleSendUpi={handleSendUpi}
                           handleConfirmPayment={handleConfirmPayment}
+                          handleSendToKitchen={handleSendToKitchen}
                         />
                       )}
                     </div>
@@ -435,7 +442,7 @@ export default function ManagerDashboardPage() {
               {[
                 { label: "Reservations", count: reservations.length, icon: "ri-calendar-check-line", bg: "bg-accent-50 border-accent-200", text: "text-accent-700" },
                 { label: "Pending Orders", count: pendingOrders.length, icon: "ri-time-line", bg: "bg-accent-50 border-accent-200", text: "text-accent-700" },
-                { label: "Awaiting Payment", count: approvedOrders.length, icon: "ri-bank-card-line", bg: "bg-secondary-50 border-secondary-200", text: "text-secondary-700" },
+                { label: "Awaiting Payment", count: awaitingPaymentOrders.length, icon: "ri-bank-card-line", bg: "bg-secondary-50 border-secondary-200", text: "text-secondary-700" },
                 { label: "In Kitchen", count: activeOrders.length, icon: "ri-fire-line", bg: "bg-primary-50 border-primary-200", text: "text-primary-700" },
                 { label: "Ready / Done", count: completedOrders.length, icon: "ri-checkbox-circle-line", bg: "bg-primary-50 border-primary-200", text: "text-primary-700" },
               ].map((stat) => (
@@ -474,8 +481,9 @@ export default function ManagerDashboardPage() {
                     setUpiInputs={setUpiInputs}
                     handleApprove={handleApprove}
                     handleReject={handleReject}
-                    handleSaveUpi={handleSaveUpi}
+                    handleSendUpi={handleSendUpi}
                     handleConfirmPayment={handleConfirmPayment}
+                    handleSendToKitchen={handleSendToKitchen}
                   />
                 ))}
               </div>
@@ -517,6 +525,13 @@ function ReservationCard({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <span className={`text-xs px-2 py-1 rounded-full font-medium border ${
+            reservation.status === 'completed'
+              ? 'bg-primary-50 text-primary-700 border-primary-200'
+              : 'bg-secondary-50 text-secondary-700 border-secondary-200'
+          }`}>
+            {reservation.status === 'completed' ? 'Completed' : 'Active'}
+          </span>
           <span className="text-xs px-2 py-1 rounded-full font-medium bg-secondary-50 text-secondary-700 border border-secondary-200">
             {elapsedTime(reservation.created_at)}
           </span>
@@ -552,6 +567,14 @@ function ReservationCard({
               <p className="text-sm text-foreground-700 mt-0.5">{reservation.notes}</p>
             </div>
           )}
+          {reservation.feedback && (
+            <div className="mt-3 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2.5">
+              <span className="text-xs text-primary-700 font-medium flex items-center gap-1">
+                <i className="ri-chat-1-line text-[10px]"></i> Customer Feedback
+              </span>
+              <p className="text-sm text-foreground-700 mt-1 italic">"{reservation.feedback}"</p>
+            </div>
+          )}
           <div className="mt-3 pt-3 border-t border-background-100 text-xs text-foreground-400">
             Reservation #{reservation.id.slice(0, 8)} &middot; {new Date(reservation.created_at).toLocaleString("en-IN")}
           </div>
@@ -572,8 +595,9 @@ function TableGroupCard({
   setUpiInputs,
   handleApprove,
   handleReject,
-  handleSaveUpi,
+  handleSendUpi,
   handleConfirmPayment,
+  handleSendToKitchen,
 }: {
   group: TableGroup;
   expandedOrder: string | null;
@@ -584,12 +608,12 @@ function TableGroupCard({
   setUpiInputs: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   handleApprove: (orderId: string) => void;
   handleReject: (orderId: string) => void;
-  handleSaveUpi: (orderId: string) => void;
+  handleSendUpi: (orderId: string) => void;
   handleConfirmPayment: (orderId: string) => void;
+  handleSendToKitchen: (orderId: string) => void;
 }) {
   const hasReservation = !!group.reservation;
   const pendingOrderCount = group.orders.filter((o) => o.status === "pending_approval").length;
-  const activeOrderCount = group.orders.filter((o) => o.status !== "ready").length;
 
   return (
     <div className="bg-background-50 border border-background-200 rounded-xl overflow-hidden">
@@ -609,10 +633,19 @@ function TableGroupCard({
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {hasReservation && (
-            <span className="text-xs px-2 py-1 rounded-full bg-accent-100 text-accent-700 border border-accent-200 font-medium flex items-center gap-1">
-              <i className="ri-calendar-check-line text-[10px]"></i>
-              {group.reservation!.first_name} {group.reservation!.last_name}
-            </span>
+            <>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium border flex items-center gap-1 ${
+                group.reservation!.status === 'completed'
+                  ? 'bg-primary-100 text-primary-700 border-primary-200'
+                  : 'bg-accent-100 text-accent-700 border-accent-200'
+              }`}>
+                <i className={`${group.reservation!.status === 'completed' ? 'ri-checkbox-circle-line' : 'ri-calendar-check-line'} text-[10px]`}></i>
+                {group.reservation!.first_name} {group.reservation!.last_name}
+                {group.reservation!.status === 'completed' && (
+                  <span className="text-[10px] ml-0.5">· Done</span>
+                )}
+              </span>
+            </>
           )}
           {pendingOrderCount > 0 && (
             <span className="text-xs px-2 py-1 rounded-full bg-accent-50 text-accent-700 border border-accent-200 font-medium">
@@ -648,6 +681,14 @@ function TableGroupCard({
               "{group.reservation!.notes}"
             </p>
           )}
+          {group.reservation!.feedback && (
+            <div className="mt-2 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2">
+              <span className="text-xs text-primary-700 font-medium flex items-center gap-1">
+                <i className="ri-chat-1-line text-[10px]"></i> Customer Feedback
+              </span>
+              <p className="text-xs text-foreground-700 mt-1 italic">"{group.reservation!.feedback}"</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -663,9 +704,6 @@ function TableGroupCard({
             .map((order) => {
               const statusCfg = STATUS_MAP[order.status] || STATUS_MAP.pending_approval;
               const isExpanded = expandedOrder === order.id;
-              const isPending = order.status === "pending_approval";
-              const isAwaitingPayment = order.status === "awaiting_payment";
-              const isApproved = order.status === "approved";
 
               return (
                 <div key={order.id}>
@@ -697,8 +735,9 @@ function TableGroupCard({
                         setUpiInputs={setUpiInputs}
                         handleApprove={handleApprove}
                         handleReject={handleReject}
-                        handleSaveUpi={handleSaveUpi}
+                        handleSendUpi={handleSendUpi}
                         handleConfirmPayment={handleConfirmPayment}
+                        handleSendToKitchen={handleSendToKitchen}
                       />
                     </div>
                   )}
@@ -728,8 +767,9 @@ function OrderDetail({
   setUpiInputs,
   handleApprove,
   handleReject,
-  handleSaveUpi,
+  handleSendUpi,
   handleConfirmPayment,
+  handleSendToKitchen,
 }: {
   order: Order;
   actionLoading: Record<string, boolean>;
@@ -738,12 +778,15 @@ function OrderDetail({
   setUpiInputs: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   handleApprove: (orderId: string) => void;
   handleReject: (orderId: string) => void;
-  handleSaveUpi: (orderId: string) => void;
+  handleSendUpi: (orderId: string) => void;
   handleConfirmPayment: (orderId: string) => void;
+  handleSendToKitchen: (orderId: string) => void;
 }) {
   const isPending = order.status === "pending_approval";
-  const isAwaitingPayment = order.status === "awaiting_payment";
   const isApproved = order.status === "approved";
+  const isAwaitingPayment = order.status === "awaiting_payment";
+  const isPaid = order.status === "paid";
+  const isPreparing = order.status === "preparing";
 
   return (
     <div className="pt-2 border-t border-background-100">
@@ -779,6 +822,7 @@ function OrderDetail({
 
       {/* Actions */}
       <div className="space-y-3">
+        {/* PENDING APPROVAL */}
         {isPending && (
           <div className="flex gap-2">
             <button
@@ -798,55 +842,95 @@ function OrderDetail({
           </div>
         )}
 
-        {(isApproved || isAwaitingPayment) && (
+        {/* APPROVED — send UPI */}
+        {isApproved && (
           <div>
-            <p className="text-xs font-medium text-foreground-500 mb-2">UPI Payment Handle</p>
-            {order.upi_handle ? (
-              <div className="bg-primary-50 border border-primary-200 rounded-lg px-3 py-2 mb-2">
-                <p className="text-xs text-foreground-500">Current UPI Handle</p>
-                <p className="text-sm font-mono font-semibold text-foreground-900">{order.upi_handle}</p>
-              </div>
-            ) : null}
+            <p className="text-xs font-medium text-foreground-500 mb-2">
+              Step 2: Send UPI Payment Handle
+            </p>
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="e.g. restaurant@upi"
-                value={upiInputs[order.id] ?? order.upi_handle}
+                value={upiInputs[order.id] ?? ""}
                 onChange={(e) =>
                   setUpiInputs((prev) => ({ ...prev, [order.id]: e.target.value }))
                 }
                 className="flex-1 px-3 py-2 text-sm border border-background-300 rounded-lg bg-background-50 text-foreground-900 placeholder:text-foreground-400 focus:outline-none focus:border-primary-400"
               />
               <button
-                onClick={() => handleSaveUpi(order.id)}
-                disabled={upiSaving[order.id] || !(upiInputs[order.id] ?? order.upi_handle)?.trim()}
-                className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-background-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer"
+                onClick={() => handleSendUpi(order.id)}
+                disabled={upiSaving[order.id] || !(upiInputs[order.id] ?? "").trim()}
+                className="px-4 py-2 bg-secondary-500 hover:bg-secondary-600 text-background-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer"
               >
-                {upiSaving[order.id] ? "Saving..." : "Save"}
+                {upiSaving[order.id] ? "Saving..." : "Send UPI"}
               </button>
             </div>
-            {isAwaitingPayment && order.upi_handle && (
-              <button
-                onClick={() => handleConfirmPayment(order.id)}
-                disabled={actionLoading[order.id]}
-                className="mt-2 w-full py-2 bg-primary-500 hover:bg-primary-600 text-background-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer"
-              >
-                {actionLoading[order.id] ? "Processing..." : "Confirm Payment Received"}
-              </button>
-            )}
+            <p className="text-xs text-foreground-400 mt-1.5">
+              Enter the UPI handle and click Send. The customer will see it on their screen and can complete payment.
+            </p>
           </div>
         )}
 
-        {(order.status === "paid" || order.status === "preparing" || order.status === "ready") && (
-          <div className="flex items-center gap-2 text-xs text-foreground-500">
-            <i className="ri-information-line"></i>
-            <span>
-              {order.status === "paid"
-                ? "Payment confirmed. Order sent to kitchen."
-                : order.status === "preparing"
-                ? "Kitchen is preparing this order."
-                : "Order is ready to serve!"}
-            </span>
+        {/* AWAITING PAYMENT */}
+        {isAwaitingPayment && (
+          <div className="space-y-3">
+            {order.upi_handle && (
+              <div className="bg-secondary-50 border border-secondary-200 rounded-lg px-3 py-2">
+                <p className="text-xs text-foreground-500">UPI Handle Sent</p>
+                <p className="text-sm font-mono font-semibold text-foreground-900">{order.upi_handle}</p>
+              </div>
+            )}
+            <button
+              onClick={() => handleConfirmPayment(order.id)}
+              disabled={actionLoading[order.id]}
+              className="w-full py-2.5 bg-primary-500 hover:bg-primary-600 text-background-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer"
+            >
+              {actionLoading[order.id] ? "Processing..." : "Confirm Payment Received"}
+            </button>
+            <p className="text-xs text-foreground-400">
+              Only click this after the customer has completed the UPI transfer.
+            </p>
+          </div>
+        )}
+
+        {/* PAID — send to kitchen */}
+        {isPaid && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs text-foreground-500 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2">
+              <i className="ri-check-line text-primary-600"></i>
+              <span>Payment confirmed. Ready for kitchen.</span>
+            </div>
+            <button
+              onClick={() => handleSendToKitchen(order.id)}
+              disabled={actionLoading[order.id]}
+              className="w-full py-2.5 bg-primary-500 hover:bg-primary-600 text-background-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer"
+            >
+              {actionLoading[order.id] ? "Processing..." : "Send to Kitchen"}
+            </button>
+          </div>
+        )}
+
+        {/* PREPARING — info only, kitchen handles ready */}
+        {isPreparing && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs text-foreground-500 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2">
+              <i className="ri-fire-line text-primary-600"></i>
+              <span>Sent to kitchen. Kitchen staff is preparing this order.</span>
+            </div>
+            <p className="text-xs text-foreground-400">
+              The kitchen display will notify you when the order is marked ready.
+            </p>
+          </div>
+        )}
+
+        {/* READY */}
+        {order.status === "ready" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs text-foreground-500 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2">
+              <i className="ri-restaurant-line text-primary-600"></i>
+              <span>Order is ready to be served to the table.</span>
+            </div>
           </div>
         )}
       </div>

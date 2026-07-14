@@ -167,6 +167,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const subscribeToOrder = useCallback((orderId: string, onUpdate: (order: Order) => void): (() => void) => {
+    // Fetch immediately so the consumer gets data right away
+    getOrder(orderId).then((initialOrder) => {
+      if (initialOrder) onUpdate(initialOrder);
+    });
+
     const channel = supabase
       .channel(`order-${orderId}`)
       .on(
@@ -186,7 +191,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [getOrder]);
 
   const subscribeToTableOrders = useCallback((tableCode: string, onUpdate: (orders: Order[]) => void): (() => void) => {
     const fetchOrders = async () => {

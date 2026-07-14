@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useOrder } from "@/store/OrderProvider";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { restaurantTables } from "@/mocks/tables";
-import { supabase } from "@/lib/supabase";
 import type React from "react";
 
 const categoryLabels: Record<string, string> = {
@@ -34,95 +33,6 @@ export default function MenuPage() {
   const { items: menuItems, loading, error } = useMenuItems();
   const [activeCategory, setActiveCategory] = useState<string>("Starters");
   const [searchTerm, setSearchTerm] = useState("");
-
-  const handleReservationSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-
-    // Honeypot check
-    const honeypot = (formData.get("phone_alt") as string)?.trim();
-    if (honeypot) {
-      const feedback = document.getElementById("res-feedback");
-      if (feedback) {
-        feedback.classList.remove("hidden");
-        feedback.querySelector(".res-success")?.classList.remove("hidden");
-      }
-      return;
-    }
-
-    // Remove honeypot from payload
-    formData.delete("phone_alt");
-
-    // Grab reservation data for Supabase
-    const reservationData = {
-      table_code: tableCode || "",
-      first_name: (formData.get("first_name") as string) || "",
-      last_name: (formData.get("last_name") as string) || "",
-      email: (formData.get("email") as string) || "",
-      phone: (formData.get("phone") as string) || "",
-      reservation_date: (formData.get("date") as string) || "",
-      reservation_time: (formData.get("time") as string) || "",
-      guests: (formData.get("guests") as string) || "",
-      notes: (formData.get("notes") as string) || "",
-    };
-
-    // Save reservation to Supabase in parallel
-    const supabasePromise = supabase.from("reservations").insert(reservationData);
-
-    // Submit to Readdy Form API
-    try {
-      const response = await fetch(form.action, {
-        method: "POST",
-        body: formData,
-      });
-      const responseText = await response.text();
-      let parsed: { code?: string; meta?: { message?: string; detail?: string } } | null = null;
-      try {
-        parsed = JSON.parse(responseText);
-      } catch {
-        parsed = null;
-      }
-
-      const feedback = document.getElementById("res-feedback");
-      const successEl = feedback?.querySelector(".res-success");
-      const errorEl = feedback?.querySelector(".res-error");
-
-      if (
-        response.ok &&
-        parsed &&
-        parsed.code === "OK" &&
-        !(parsed.meta?.message?.toLowerCase().includes("spam")) &&
-        !(parsed.meta?.detail?.toLowerCase().includes("spam"))
-      ) {
-        // Also save to Supabase (don't block success on this)
-        supabasePromise.catch(() => {});
-        form.reset();
-        if (feedback) {
-          feedback.classList.remove("hidden");
-          successEl?.classList.remove("hidden");
-          errorEl?.classList.add("hidden");
-        }
-      } else {
-        const serverMsg = parsed?.meta?.message || parsed?.meta?.detail || responseText;
-        if (feedback && errorEl) {
-          feedback.classList.remove("hidden");
-          errorEl.textContent = serverMsg || "Something went wrong. Please try again.";
-          errorEl.classList.remove("hidden");
-          successEl?.classList.add("hidden");
-        }
-      }
-    } catch {
-      const feedback = document.getElementById("res-feedback");
-      const errorEl = feedback?.querySelector(".res-error");
-      const successEl = feedback?.querySelector(".res-success");
-      if (feedback && errorEl) {
-        feedback.classList.remove("hidden");
-        errorEl.classList.remove("hidden");
-        successEl?.classList.add("hidden");
-      }
-    }
-  };
 
   const table = restaurantTables.find((t) => t.code === tableCode);
 
@@ -179,10 +89,10 @@ export default function MenuPage() {
           {cartCount > 0 && (
             <button
               onClick={() => navigate(`/cart/${tableCode}`)}
-              className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary-500 text-background-50 text-sm font-medium hover:bg-primary-600 transition-colors cursor-pointer"
+              className="relative flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-500 text-background-50 text-sm font-medium hover:bg-primary-600 transition-colors cursor-pointer"
             >
               <i className="ri-shopping-cart-line"></i>
-              <span>{cartCount}</span>
+              <span>{cartCount} item{cartCount !== 1 ? "s" : ""} &middot; ₹{cartTotal}</span>
             </button>
           )}
         </div>
@@ -297,193 +207,6 @@ export default function MenuPage() {
         )}
       </main>
 
-      {/* Reservation Section */}
-      <section className="relative bg-background-950 py-16 md:py-24 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10 md:mb-12">
-            <p className="text-primary-500 text-xs uppercase tracking-[0.2em] mb-3 flex items-center justify-center gap-2">
-              <span className="inline-block w-6 h-[1px] bg-primary-400"></span>
-              Reservations
-              <span className="inline-block w-6 h-[1px] bg-primary-400"></span>
-            </p>
-            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl text-white leading-tight">
-              Reserve your
-              <br />
-              <em className="text-accent-300">table</em>
-            </h2>
-          </div>
-
-          <form
-            data-readdy-form
-            id="reservation-form"
-            action="https://readdy.ai/api/form/d9b5t8ahsavvukudoll0"
-            method="POST"
-            className="space-y-5"
-            onSubmit={handleReservationSubmit}
-          >
-            {/* Honeypot */}
-            <input
-              type="text"
-              name="phone_alt"
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-              readOnly
-              className="honeypot-field"
-            />
-
-            {/* Name Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="fname" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                  First Name
-                </label>
-                <input
-                  id="fname"
-                  name="first_name"
-                  type="text"
-                  placeholder="e.g. Rahul"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="lname" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                  Last Name
-                </label>
-                <input
-                  id="lname"
-                  name="last_name"
-                  type="text"
-                  placeholder="e.g. Sharma"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Email + Phone Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="res-email" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                  Email
-                </label>
-                <input
-                  id="res-email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="res-phone" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                  Phone
-                </label>
-                <input
-                  id="res-phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="+91 98765 43210"
-                  className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Date + Time + Guests Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="res-date" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                  Date
-                </label>
-                <input
-                  id="res-date"
-                  name="date"
-                  type="date"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="res-time" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                  Time
-                </label>
-                <select
-                  id="res-time"
-                  name="time"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all appearance-none"
-                  style={{ backgroundImage: 'none' }}
-                >
-                  <option value="" disabled selected className="bg-background-950 text-foreground-500">Select a time</option>
-                  <option value="12:00 PM" className="bg-background-950">12:00 PM</option>
-                  <option value="12:30 PM" className="bg-background-950">12:30 PM</option>
-                  <option value="01:00 PM" className="bg-background-950">01:00 PM</option>
-                  <option value="01:30 PM" className="bg-background-950">01:30 PM</option>
-                  <option value="07:00 PM" className="bg-background-950">07:00 PM</option>
-                  <option value="07:30 PM" className="bg-background-950">07:30 PM</option>
-                  <option value="08:00 PM" className="bg-background-950">08:00 PM</option>
-                  <option value="08:30 PM" className="bg-background-950">08:30 PM</option>
-                  <option value="09:00 PM" className="bg-background-950">09:00 PM</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="res-guests" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                  Guests
-                </label>
-                <select
-                  id="res-guests"
-                  name="guests"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all appearance-none"
-                >
-                  <option value="" disabled selected className="bg-background-950">Number</option>
-                  <option value="1" className="bg-background-950">1</option>
-                  <option value="2" className="bg-background-950">2</option>
-                  <option value="3" className="bg-background-950">3</option>
-                  <option value="4" className="bg-background-950">4</option>
-                  <option value="5" className="bg-background-950">5</option>
-                  <option value="6" className="bg-background-950">6</option>
-                  <option value="7" className="bg-background-950">7</option>
-                  <option value="8+" className="bg-background-950">8+</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Special Requests */}
-            <div className="space-y-1.5">
-              <label htmlFor="res-notes" className="block text-xs font-medium text-white/60 uppercase tracking-wider">
-                Special Requests <span className="text-white/25 normal-case">(optional)</span>
-              </label>
-              <textarea
-                id="res-notes"
-                name="notes"
-                rows={3}
-                maxLength={500}
-                placeholder="Dietary needs, celebrations, seating preferences..."
-                className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm transition-all resize-none"
-              />
-              <p className="text-[10px] text-white/25 mt-1">Max 500 characters</p>
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              className="w-full py-3.5 px-6 bg-primary-500 text-background-50 rounded-lg font-medium text-sm hover:bg-primary-600 active:bg-primary-700 transition-all duration-200 cursor-pointer whitespace-nowrap"
-            >
-              Confirm Reservation
-            </button>
-
-            {/* Feedback */}
-            <div id="res-feedback" className="hidden text-center text-sm">
-              <span className="res-success hidden text-green-400">Reservation request sent successfully!</span>
-              <span className="res-error hidden text-primary-400">Something went wrong. Please try again.</span>
-            </div>
-          </form>
-        </div>
-      </section>
-
       {/* Cart Bar */}
       {cartCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-background-50/95 backdrop-blur-sm border-t border-background-200">
@@ -496,7 +219,10 @@ export default function MenuPage() {
                 <i className="ri-shopping-cart-line text-lg"></i>
                 <span>{cartCount} item{cartCount !== 1 ? "s" : ""}</span>
               </span>
-              <span className="font-semibold">₹{cartTotal}</span>
+              <span className="flex items-center gap-2">
+                <span className="font-semibold">₹{cartTotal}</span>
+                <span className="text-xs opacity-80 hidden sm:inline">&mdash; review &amp; reserve</span>
+              </span>
             </button>
           </div>
         </div>
