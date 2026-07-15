@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useOrder } from "@/store/OrderProvider";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { restaurantTables } from "@/mocks/tables";
+import FloatingFood from "@/components/feature/FloatingFood";
 import type React from "react";
 
 const categoryLabels: Record<string, string> = {
@@ -70,6 +71,7 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-background-50 pb-28">
+      <FloatingFood />
       {/* Sticky Header */}
       <header className="sticky top-0 z-30 bg-background-50/95 backdrop-blur-sm border-b border-background-200">
         <div className="px-4 sm:px-6 py-3 flex items-center justify-between max-w-6xl mx-auto">

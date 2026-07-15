@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/store/AuthContext";
 import { useOrder } from "@/store/OrderProvider";
 import { supabase } from "@/lib/supabase";
+import FloatingFood from "@/components/feature/FloatingFood";
 import type { Order } from "@/store/OrderContext";
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
@@ -83,6 +84,7 @@ export default function KitchenDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background-50">
+      <FloatingFood />
       {/* Header */}
       <header className="bg-background-950 border-b border-background-800 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">

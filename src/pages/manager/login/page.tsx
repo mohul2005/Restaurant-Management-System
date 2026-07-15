@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/store/AuthContext";
 import { supabase } from "@/lib/supabase";
+import FloatingFood from "@/components/feature/FloatingFood";
 import StaffAccountSetup from "@/components/feature/StaffAccountSetup";
 
 export default function ManagerLoginPage() {
@@ -58,6 +59,7 @@ export default function ManagerLoginPage() {
 
   return (
     <div className="min-h-screen bg-background-50 flex items-center justify-center p-4">
+      <FloatingFood />
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary-500 flex items-center justify-center">

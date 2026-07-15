@@ -67,6 +67,13 @@ A restaurant management web app with three user roles (Customer, Manager, Kitche
 
 ### Phase 3: Manager Dashboard ✅ DONE
 - Manager login, dashboard with live order list, approve/reject, UPI handle
+- Table Turnover Rate stat (avg time from reserved to completed)
+- Reservation feedback viewing
 
 ### Phase 4: Kitchen Dashboard ✅ DONE
 - Kitchen login, order queue, Preparing/Ready status controls
+
+### Phase 5: Dining History ✅ DONE
+- Customer dining history page at /dining-history
+- Email-based lookup for past completed reservations and linked orders
+- Accessible from home page footer and post-meal thank-you screen

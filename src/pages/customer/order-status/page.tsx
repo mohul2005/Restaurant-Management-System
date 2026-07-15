@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useOrder } from "@/store/OrderProvider";
 import { supabase } from "@/lib/supabase";
+import FloatingFood from "@/components/feature/FloatingFood";
 import type { Order } from "@/store/OrderContext";
 
 const STATUS_CONFIG: Record<Order["status"], { label: string; color: string; bg: string; icon: string; desc: string }> = {
@@ -256,6 +257,7 @@ export default function OrderStatusPage() {
 
   return (
     <div className="min-h-screen bg-background-50 pb-8">
+      <FloatingFood />
       <header className="sticky top-0 z-30 bg-background-50/95 backdrop-blur-sm border-b border-background-200">
         <div className="px-4 py-3 flex items-center gap-3">
           <Link to={`/menu/${tableCode}`} className="text-foreground-500 hover:text-foreground-700">
@@ -522,6 +524,15 @@ export default function OrderStatusPage() {
                     <p className="text-sm text-foreground-700 italic">"{reservation.feedback}"</p>
                   </div>
                 )}
+                <div className="mt-4 pt-4 border-t border-primary-200">
+                  <Link
+                    to="/dining-history"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                  >
+                    <i className="ri-history-line"></i>
+                    View Dining History
+                  </Link>
+                </div>
               </div>
             ) : null}
           </>

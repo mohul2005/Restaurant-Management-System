@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import { restaurantTables } from "@/mocks/tables";
+import FloatingFood from "@/components/feature/FloatingFood";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -14,11 +14,6 @@ export default function Home() {
 
   const scrollToContact = () => {
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const getMenuUrl = (tableCode: string) => {
-    const cleanPath = __BASE_PATH__.replace(/\/+$/, "");
-    return `${window.location.origin}${cleanPath}/menu/${tableCode}`;
   };
 
   const handleTableSelect = (code: string) => {
@@ -42,6 +37,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background-50">
+      <FloatingFood />
       <section className="relative h-screen w-full overflow-hidden cursor-default">
         <div className="absolute inset-0 z-0 bg-background-950">
           <iframe
@@ -203,14 +199,8 @@ export default function Home() {
                   onClick={() => handleTableSelect(table.code)}
                   className="flex flex-col items-center p-4 rounded-xl border border-background-300 bg-background-50 hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 cursor-pointer group"
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-3 p-1.5 bg-background-50 rounded-lg border border-background-200">
-                    <QRCodeSVG
-                      value={getMenuUrl(table.code)}
-                      size={80}
-                      level="M"
-                      fgColor="oklch(0.18 0.055 42)"
-                      bgColor="transparent"
-                    />
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-3 rounded-lg bg-background-100 flex items-center justify-center group-hover:bg-primary-100 transition-colors">
+                    <i className="ri-table-line text-3xl sm:text-4xl text-foreground-400 group-hover:text-primary-500 transition-colors"></i>
                   </div>
                   <span className="font-heading text-base font-semibold text-foreground-900 group-hover:text-primary-600">
                     {table.code}
@@ -440,6 +430,12 @@ export default function Home() {
               className="text-white/40 hover:text-white/70 text-xs transition-colors"
             >
               Staff
+            </a>
+            <a
+              href="/dining-history"
+              className="text-white/40 hover:text-white/70 text-xs transition-colors"
+            >
+              Dining History
             </a>
             <button
               onClick={scrollToContact}

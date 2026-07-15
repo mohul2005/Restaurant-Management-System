@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/store/AuthContext";
 import { useOrder } from "@/store/OrderProvider";
 import { supabase } from "@/lib/supabase";
+import FloatingFood from "@/components/feature/FloatingFood";
 import type { Order } from "@/store/OrderContext";
 import MenuManager from "@/pages/manager/dashboard/components/MenuManager";
 
@@ -63,6 +64,7 @@ export default function ManagerDashboardPage() {
   const [upiSaving, setUpiSaving] = useState<Record<string, boolean>>({});
   const [showArchive, setShowArchive] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "orders" | "reservations" | "menu">("overview");
+  const [turnoverMinutes, setTurnoverMinutes] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -89,7 +91,24 @@ export default function ManagerDashboardPage() {
         .from("reservations")
         .select("*")
         .order("created_at", { ascending: false });
-      if (data) setReservations(data as Reservation[]);
+      if (data) {
+        setReservations(data as Reservation[]);
+
+        // Calculate average turnover time (reservation created -> completed)
+        const completedReservations = (data as Reservation[]).filter(
+          (r) => r.status === "completed"
+        );
+        if (completedReservations.length > 0) {
+          const totalMinutes = completedReservations.reduce((sum, r) => {
+            const created = new Date(r.created_at).getTime();
+            const updated = new Date(r.updated_at).getTime();
+            return sum + (updated - created) / 60000;
+          }, 0);
+          setTurnoverMinutes(Math.round(totalMinutes / completedReservations.length));
+        } else {
+          setTurnoverMinutes(null);
+        }
+      }
     };
 
     fetchReservations();
@@ -211,6 +230,7 @@ export default function ManagerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background-50">
+      <FloatingFood />
       {/* Header */}
       <header className="bg-background-950 border-b border-background-800 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
@@ -438,22 +458,41 @@ export default function ManagerDashboardPage() {
           /* ── Overview Tab (default) ── */
           <div>
             {/* Stats Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
               {[
                 { label: "Reservations", count: reservations.length, icon: "ri-calendar-check-line", bg: "bg-accent-50 border-accent-200", text: "text-accent-700" },
                 { label: "Pending Orders", count: pendingOrders.length, icon: "ri-time-line", bg: "bg-accent-50 border-accent-200", text: "text-accent-700" },
                 { label: "Awaiting Payment", count: awaitingPaymentOrders.length, icon: "ri-bank-card-line", bg: "bg-secondary-50 border-secondary-200", text: "text-secondary-700" },
                 { label: "In Kitchen", count: activeOrders.length, icon: "ri-fire-line", bg: "bg-primary-50 border-primary-200", text: "text-primary-700" },
                 { label: "Ready / Done", count: completedOrders.length, icon: "ri-checkbox-circle-line", bg: "bg-primary-50 border-primary-200", text: "text-primary-700" },
-              ].map((stat) => (
-                <div key={stat.label} className={`rounded-xl border p-3 ${stat.bg}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <i className={`${stat.icon} ${stat.text} text-sm`}></i>
-                    <span className="text-xs text-foreground-500 font-medium">{stat.label}</span>
+                turnoverMinutes !== null ? {
+                  label: "Turnover Rate",
+                  count: `${turnoverMinutes}m`,
+                  displayCount: `${turnoverMinutes}m`,
+                  icon: "ri-refresh-line",
+                  bg: "bg-secondary-50 border-secondary-200",
+                  text: "text-secondary-700",
+                  isText: true,
+                } : null,
+              ]
+                .filter((s): s is NonNullable<typeof s> => s !== null)
+                .map((stat) => ("isText" in stat ? (
+                  <div key={stat.label} className={`rounded-xl border p-3 ${stat.bg}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <i className={`${stat.icon} ${stat.text} text-sm`}></i>
+                      <span className="text-xs text-foreground-500 font-medium">{stat.label}</span>
+                    </div>
+                    <p className={`text-2xl font-bold ${stat.text}`}>{(stat as { displayCount: string }).displayCount}</p>
                   </div>
-                  <p className={`text-2xl font-bold ${stat.text}`}>{stat.count}</p>
-                </div>
-              ))}
+                ) : (
+                  <div key={stat.label} className={`rounded-xl border p-3 ${stat.bg}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <i className={`${stat.icon} ${stat.text} text-sm`}></i>
+                      <span className="text-xs text-foreground-500 font-medium">{stat.label}</span>
+                    </div>
+                    <p className={`text-2xl font-bold ${stat.text}`}>{stat.count}</p>
+                  </div>
+                )))}
             </div>
 
             {tableGroups.length === 0 ? (

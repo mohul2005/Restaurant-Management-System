@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useOrder } from "@/store/OrderProvider";
 import { restaurantTables } from "@/mocks/tables";
 import { supabase } from "@/lib/supabase";
+import FloatingFood from "@/components/feature/FloatingFood";
 import type React from "react";
 
 export default function CartPage() {
@@ -142,6 +143,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-background-50 flex flex-col">
+      <FloatingFood />
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background-50/95 backdrop-blur-sm border-b border-background-200">
         <div className="px-4 sm:px-6 py-3 flex items-center gap-3 max-w-6xl mx-auto">
