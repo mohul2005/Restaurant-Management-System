@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { restaurantTables } from "@/mocks/tables";
 import FloatingFood from "@/components/feature/FloatingFood";
+import KitchenSmoke from "@/components/feature/KitchenSmoke";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -100,7 +101,8 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="relative z-10 bg-background-950 py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="relative z-10 bg-background-950 py-16 md:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <KitchenSmoke />
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column */}
           <div className="space-y-6">
@@ -178,9 +180,12 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="table-section" className="relative bg-background-50">
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-background-50 pointer-events-none" />
+      {/* Gradient Bridge: Dark → Light */}
+      <div className="relative h-32 md:h-40 -mt-1 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-background-950 via-background-950/60 to-background-50" />
+      </div>
 
+      <section id="table-section" className="relative bg-background-50">
         <main className="flex flex-col items-center justify-center px-4 py-16 md:py-20">
           <div className="w-full max-w-2xl">
             <div className="text-center mb-10">
@@ -398,6 +403,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Gradient Bridge: Light → Dark */}
+      <div className="relative h-32 md:h-40 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-background-50 via-background-50/60 to-background-950" />
+      </div>
 
       {/* Footer */}
       <footer className="bg-background-950 py-10 md:py-12 px-4 sm:px-6 lg:px-8">

@@ -4,6 +4,7 @@ import { useAuth } from "@/store/AuthContext";
 import { useOrder } from "@/store/OrderProvider";
 import { supabase } from "@/lib/supabase";
 import FloatingFood from "@/components/feature/FloatingFood";
+import KitchenSmoke from "@/components/feature/KitchenSmoke";
 import type { Order } from "@/store/OrderContext";
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
@@ -86,7 +87,8 @@ export default function KitchenDashboardPage() {
     <div className="min-h-screen bg-background-50">
       <FloatingFood />
       {/* Header */}
-      <header className="bg-background-950 border-b border-background-800 sticky top-0 z-40">
+      <header className="bg-background-950 border-b border-background-800 sticky top-0 z-40 relative overflow-hidden">
+        <KitchenSmoke />
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary-500 flex items-center justify-center">

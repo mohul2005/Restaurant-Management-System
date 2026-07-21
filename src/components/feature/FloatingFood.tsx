@@ -69,8 +69,8 @@ export default function FloatingFood() {
               style={{
                 fontSize: `${item.size}px`,
                 transform: `rotate(${item.rotate}deg)`,
-                opacity: 0.1,
-                color: 'var(--foreground-500)',
+                color: `oklch(var(--primary-500) / 0.08)`,
+                textShadow: '0 0 12px oklch(var(--primary-500) / 0.12)',
               }}
             >
               <i className={item.icon}></i>
